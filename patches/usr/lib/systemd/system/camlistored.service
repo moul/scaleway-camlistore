@@ -1,0 +1,14 @@
+[Unit]
+Description=Camlistore
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+ExecStart=/user/local/bin/camlistored -openbrowser'='false
+RestartSec=1s
+Restart=always
+Type=notify
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
