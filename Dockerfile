@@ -1,6 +1,5 @@
 # Copyright 2015 The Camlistore Authors.
-# We're using vivid, because it has systemd, and we already have the systemd units
-# for Camlistore (and upstart looks terrible).
+# We're using vivid, because it has systemd, which makes it easy to servicify Camlistore.
 FROM armbuild/scw-distrib-ubuntu:vivid
 MAINTAINER Mathieu Lonjaret <mathieu.lonjaret@gmail.com> (@lejatorn)
 
@@ -38,13 +37,15 @@ RUN ./make.bash
 RUN apt-get -y --no-install-recommends install git
 WORKDIR /tmp
 RUN git clone https://camlistore.googlesource.com/camlistore
-RUN WORKDIR ./camlistore
-RUN /usr/local/go/bin/go run make.go
+WORKDIR /tmp/camlistore
+ENV PATH $PATH:/usr/local/go/bin
+RUN go run make.go
 RUN cp -a ./bin/* /usr/local/bin/
-ADD ./patches/usr/lib/systemd/system/camlistored.service /usr/lib/systemd/system/camlistored.service
+ADD ./patches/usr/lib/systemd/system/camlistored.service /lib/systemd/system/camlistored.service
 
 # Install mysql and deps
 RUN apt-get -y install mysql-server-core-5.6 mysql-server-5.6
+ADD ./patches/usr/lib/systemd/system/camli-mysql.service /lib/systemd/system/camli-mysql.service
 
 # Patch rootfs
 # ADD ./patches/etc/ /etc/

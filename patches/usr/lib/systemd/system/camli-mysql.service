@@ -1,0 +1,14 @@
+[Unit]
+Description=MySQL for Camlistore
+
+[Service]
+ExecStartPre=systemctl stop mysql
+ExecStart=/usr/local/bin/run-mysqld
+Restart=always
+RestartSec=1s
+TimeoutSec=600
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

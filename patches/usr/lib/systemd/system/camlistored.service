@@ -1,14 +1,14 @@
 [Unit]
 Description=Camlistore
-After=mysql.service
-Requires=mysql.service
+After=camli-mysql.service
+Requires=camli-mysql.service
 
 [Service]
 ExecStart=/user/local/bin/camlistored -openbrowser'='false
 RestartSec=1s
 Restart=always
-Type=notify
-NotifyAccess=all
+Type=simple
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
