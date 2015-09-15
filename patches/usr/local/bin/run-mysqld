@@ -30,6 +30,7 @@ bootstrap() {
     sed -e "s/^SELECT.*INTO @current_hostname;$/SELECT '%' INTO @current_hostname;/"
   ) |
   /usr/sbin/mysqld \
+	--bind-address=127.0.0.1 \
     --no-defaults --bootstrap \
     --datadir=${ROOT}/datadir \
     --tmpdir=${ROOT}/tmp/ \
@@ -42,6 +43,7 @@ bootstrap() {
 bootstrap
 
 exec /usr/sbin/mysqld \
+  --bind-address=127.0.0.1 \
   --no-defaults \
   --datadir=${ROOT}/datadir \
   --tmpdir=${ROOT}/tmp/ \
