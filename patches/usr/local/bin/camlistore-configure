@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#TODO(mpl): username and password as arguments
+
+sed -i -e 's#"auth":\ "localhost",#"auth": "userpass:foo:bar",#' /home/mpl/config.ini
+sed -i -e 's#"kvIndexFile":\ "/home/camli/var/camlistore/camli-index.kvdb",#"mysql": "root@localhost:3306:",#' /home/mpl/config.ini
+sed -i -e 's#"dbNames":\ null#"dbNames": {\n\t\t"queue-sync-to-index": "sync_index_queue",\n\t\t"ui_thumbcache": "ui_thumbmeta_cache",\n\t\t"blobpacked_index": "blobpacked_index"\n\t},\n\t"https": true,\n\t"packRelated": true#' /home/mpl/config.ini
