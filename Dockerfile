@@ -43,16 +43,14 @@ RUN go run make.go
 RUN cp -a ./bin/* /usr/local/bin/
 ADD ./patches/lib/systemd/system/camlistored.service /lib/systemd/system/camlistored.service
 ADD ./patches/usr/local/bin/camlistore-configure /usr/local/bin/camlistore-configure
+RUN adduser --disabled-password --gecos "" camli
 
 # Install mysql and deps
 RUN apt-get -y --no-install-recommends install mysql-server-core-5.6 mysql-server-5.6
 ADD ./patches/lib/systemd/system/camli-mysql.service /lib/systemd/system/camli-mysql.service
 ADD ./patches/usr/local/bin/run-mysqld /usr/local/bin/run-mysqld
 
-RUN adduser --disabled-password --gecos "" camli
-
-# Patch rootfs
-# ADD ./patches/etc/ /etc/
+#TODO(mpl): make sure mysql is only reachable by localhost
 
 # Clean rootfs from image-builder
 RUN /usr/local/sbin/builder-leave
