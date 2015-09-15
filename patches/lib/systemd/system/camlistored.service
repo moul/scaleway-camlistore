@@ -4,7 +4,9 @@ After=camli-mysql.service
 Requires=camli-mysql.service
 
 [Service]
-ExecStart=/user/local/bin/camlistored -openbrowser'='false
+User=camli
+Group=camli
+ExecStart=/usr/local/bin/camlistored -openbrowser'='false
 RestartSec=1s
 Restart=always
 Type=simple
