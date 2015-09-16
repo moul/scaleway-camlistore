@@ -26,11 +26,9 @@ bootstrap() {
   (
     echo 'use mysql;'
     cat /usr/share/mysql/mysql_system_tables.sql
-    cat /usr/share/mysql/mysql_system_tables_data.sql |
-    sed -e "s/^SELECT.*INTO @current_hostname;$/SELECT '%' INTO @current_hostname;/"
+    cat /usr/share/mysql/mysql_system_tables_data.sql
   ) |
   /usr/sbin/mysqld \
-	--bind-address=127.0.0.1 \
     --no-defaults --bootstrap \
     --datadir=${ROOT}/datadir \
     --tmpdir=${ROOT}/tmp/ \
@@ -43,13 +41,12 @@ bootstrap() {
 bootstrap
 
 exec /usr/sbin/mysqld \
-  --bind-address=127.0.0.1 \
   --no-defaults \
   --datadir=${ROOT}/datadir \
   --tmpdir=${ROOT}/tmp/ \
   --lc-messages-dir=/usr/share/mysql \
   --character-sets-dir=/usr/share/mysql/charsets \
-  --sock=${ROOT}/mysql.sock \
+  --socket=${ROOT}/mysql.sock \
   --pid-file=${ROOT}/mysql.pid \
   --innodb_file_per_table \
   --skip-name-resolve \
