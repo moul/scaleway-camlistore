@@ -2,7 +2,6 @@
 Description=MySQL for Camlistore
 
 [Service]
-ExecStartPre=systemctl stop mysql
 ExecStart=/usr/local/bin/run-mysqld
 Restart=always
 RestartSec=1s
