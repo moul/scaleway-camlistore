@@ -1,6 +1,6 @@
 # Copyright 2015 The Camlistore Authors.
 # We're using vivid, because it has systemd, which makes it easy to servicify Camlistore.
-FROM armbuild/scw-distrib-ubuntu:vivid
+FROM scaleway/ubuntu:vivid
 MAINTAINER Mathieu Lonjaret <mathieu.lonjaret@gmail.com> (@lejatorn)
 
 # Prepare rootfs for image-builder

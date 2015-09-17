@@ -1,12 +1,5 @@
 #!/bin/bash
 
-METADATA=$(oc-metadata --cached)
-
-metadata() {
-  key=$1
-  echo "$METADATA" | grep "^$key=" | cut -d= -f2 | sed "s/^['\"]//;s/['\"]$//"
-}
-
 cat<<EOF
 
 *****************************************************************************
@@ -16,6 +9,6 @@ cat<<EOF
    For further configuration, see https://camlistore.org/docs/server-config
    and edit /home/camli/.config/camlistore/server-config.json
 
-   Then access your Camlistore instance at https://$(metadata PUBLIC_IP_ADDRESS):3179
+   Then access your Camlistore instance at https://$(oc-metadata --cached PUBLIC_IP_ADDRESS):3179/
 *****************************************************************************
 EOF
