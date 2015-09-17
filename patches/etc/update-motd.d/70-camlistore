@@ -7,8 +7,6 @@ metadata() {
   echo "$METADATA" | grep "^$key=" | cut -d= -f2 | sed "s/^['\"]//;s/['\"]$//"
 }
 
-# admin rights push test
-
 cat<<EOF
 
 *****************************************************************************
