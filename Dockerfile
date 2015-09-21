@@ -35,16 +35,19 @@ RUN ./make.bash
 
 # Build and install Camlistore
 RUN apt-get -y --no-install-recommends install git
-WORKDIR /tmp
-RUN git clone https://camlistore.googlesource.com/camlistore
-WORKDIR /tmp/camlistore
+WORKDIR /tmp/src
+RUN git clone https://camlistore.googlesource.com/camlistore camlistore.org
+WORKDIR /tmp/src/camlistore.org
 ENV PATH $PATH:/usr/local/go/bin
 RUN go run make.go
 RUN cp -a ./bin/* /usr/local/bin/
 ADD ./patches/lib/systemd/system/camlistored.service /lib/systemd/system/camlistored.service
-ADD ./patches/usr/local/bin/camlistore-configure /usr/local/bin/camlistore-configure
 ADD ./patches/etc/update-motd.d/70-camlistore /etc/update-motd.d/70-camlistore
 RUN adduser --disabled-password --gecos "" camli
+
+ADD ./patches/usr/local/src/camlistore-configure.go /usr/local/src/camlistore-configure.go
+ENV GOPATH /tmp/
+RUN go build -o /usr/local/bin/camlistore-configure /usr/local/src/camlistore-configure.go
 
 # Install mysql and deps
 RUN apt-get -y --no-install-recommends install mysql-server-core-5.6 mysql-server-5.6

@@ -4,7 +4,7 @@ cat<<EOF
 
 *****************************************************************************
    To set up Camlistore, please run:
-   $> camlistore-configure
+   $> camlistore-configure -username desired_username -password desired_password
    
    For further configuration, see https://camlistore.org/docs/server-config
    and edit /home/camli/.config/camlistore/server-config.json

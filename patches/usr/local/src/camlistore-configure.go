@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(mpl): doc
+// The camlistore-configure program creates a default setup and configuration
+// for running Camlistore on Scaleway.
 package main
 
 import (
@@ -23,9 +24,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"os/user"
+	"path"
+	"strconv"
 
 	"camlistore.org/pkg/jsonsign"
-	"camlistore.org/pkg/osutil"
 	"camlistore.org/pkg/types/serverconfig"
 	"camlistore.org/pkg/wkfs"
 )
@@ -36,25 +40,27 @@ var (
 )
 
 const (
+	camliUsername   = "camli"
+	home            = "/home/camli/"
 	camliServerConf = "/home/camli/.config/camlistore/server-config.json"
+	secRing         = "/home/camli/.config/camlistore/identity-secring.gpg"
 )
 
 var baseConfig = serverconfig.Config{
-	Listen: ":3179",
-	HTTPS:  true,
-    BlobPath: "/home/camli/var/camlistore/blobs",
-	PackRelated: true,
-	MySQL: "root@localhost:3306:",
+	Listen:             ":3179",
+	HTTPS:              true,
+	IdentitySecretRing: secRing,
+	BlobPath:           path.Join(home, "var/camlistore/blobs"),
+	PackRelated:        true,
+	MySQL:              "root@localhost:3306:",
 	DBNames: map[string]string{
 		"queue-sync-to-index": "sync_index_queue",
-		"ui_thumbcache": "ui_thumbmeta_cache",
-		"blobpacked_index": "blobpacked_index",
+		"ui_thumbcache":       "ui_thumbmeta_cache",
+		"blobpacked_index":    "blobpacked_index",
 	},
 }
 
-// TODO(mpl): export camlistore.org/pkg/serverinit/genconfig.go:getOrMakeKeyring so we can just use it here.
-func getOrMakeKeyring() (keyID, secRing string, err error) {
-	secRing = osutil.SecretRingFile()
+func getOrMakeKeyring() (keyID string, err error) {
 	_, err = wkfs.Stat(secRing)
 	switch {
 	case err == nil:
@@ -81,13 +87,15 @@ func writeDefaultConfigFile() error {
 	if err := wkfs.MkdirAll(baseConfig.BlobPath, 0700); err != nil {
 		return fmt.Errorf("Could not create default blobs directory: %v", err)
 	}
+	if err := wkfs.MkdirAll(path.Base(camliServerConf), 0700); err != nil {
+		return fmt.Errorf("Could not create default config directory: %v", err)
+	}
 
-	keyID, secretRing, err := getOrMakeKeyring()
+	keyID, err := getOrMakeKeyring()
 	if err != nil {
 		return err
 	}
 	baseConfig.Identity = keyID
-	baseConfig.IdentitySecretRing = secretRing
 	baseConfig.Auth = fmt.Sprintf("userpass:%s:%s", *flagUsername, *flagPassword)
 
 	confData, err := json.MarshalIndent(baseConfig, "", "    ")
@@ -98,7 +106,49 @@ func writeDefaultConfigFile() error {
 		return fmt.Errorf("Could not create or write default server config: %v", err)
 	}
 
+	camliUser, err := user.Lookup(camliUsername)
+	if err != nil {
+		return err
+	}
+	uid, err := strconv.Atoi(camliUser.Uid)
+	if err != nil {
+		return err
+	}
+	// chown everything back to "camli" since we run as root.
+	for _, v := range []string{
+		path.Base(camliServerConf),
+		camliServerConf,
+		secRing,
+	} {
+		if err := os.Chown(v, uid, uid); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func service(op, serviceName string) {
+	cmd := exec.Command("systemctl", op, serviceName)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatalf("%v: %v", out, err)
+	}
+}
+
+func setupServices() {
+	for _, v := range []struct {
+		op          string
+		serviceName string
+	}{
+		{op: "stop", serviceName: "mysql"},
+		{op: "disable", serviceName: "mysql"},
+		{op: "enable", serviceName: "camli-mysql"},
+		{op: "enable", serviceName: "camlistored"},
+		{op: "restart", serviceName: "camli-mysql"},
+		{op: "restart", serviceName: "camlistored"},
+	} {
+		service(v.op, v.serviceName)
+	}
 }
 
 func checkArgs() {
@@ -119,7 +169,7 @@ func main() {
 
 	checkArgs()
 
-	if _, err := os.Stat(camliServerConf); err == nil {
+	if _, err := wkfs.Stat(camliServerConf); err == nil {
 		fmt.Printf("Configuration file %v already exists, nothing to do.\n", camliServerConf)
 		return
 	} else {
@@ -127,7 +177,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	
+
 	if err := writeDefaultConfigFile(); err != nil {
 		log.Fatal(err)
 	}
