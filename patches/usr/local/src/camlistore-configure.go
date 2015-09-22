@@ -25,9 +25,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
-	"strconv"
 
 	"camlistore.org/pkg/jsonsign"
 	"camlistore.org/pkg/types/serverconfig"
@@ -106,32 +104,21 @@ func writeDefaultConfigFile() error {
 		return fmt.Errorf("Could not create or write default server config: %v", err)
 	}
 
-	camliUser, err := user.Lookup(camliUsername)
-	if err != nil {
-		return err
-	}
-	uid, err := strconv.Atoi(camliUser.Uid)
-	if err != nil {
-		return err
-	}
 	// chown everything back to "camli" since we run as root.
-	for _, v := range []string{
-		path.Base(camliServerConf),
-		camliServerConf,
-		secRing,
-	} {
-		if err := os.Chown(v, uid, uid); err != nil {
-			return err
-		}
+	// TODO(mpl): do it in Go with os.Chown + filepath.Walk (for recursion), if we care.
+	if out, err := exec.Command("chown", "-R", camliUsername+":"+camliUsername, path.Join(home, "var")).CombinedOutput(); err != nil {
+		return fmt.Errorf("chown error: %v, %v", string(out), err)
+	}
+	if out, err := exec.Command("chown", "-R", camliUsername+":"+camliUsername, path.Join(home, ".config")).CombinedOutput(); err != nil {
+		return fmt.Errorf("chown error: %v, %v", string(out), err)
 	}
 	return nil
 }
 
 func service(op, serviceName string) {
-	cmd := exec.Command("systemctl", op, serviceName)
-	out, err := cmd.CombinedOutput()
+	out, err := exec.Command("systemctl", op, serviceName).CombinedOutput()
 	if err != nil {
-		log.Fatalf("%v: %v", out, err)
+		log.Fatalf("systemctl %s %s error: %v, %v", op, serviceName, string(out), err)
 	}
 }
 
@@ -181,4 +168,6 @@ func main() {
 	if err := writeDefaultConfigFile(); err != nil {
 		log.Fatal(err)
 	}
+
+	setupServices()
 }
