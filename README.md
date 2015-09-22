@@ -1,4 +1,4 @@
-# [Camlistore](https://camlistore.org) image on Scaleway
+<h1><a href="https://camlistore.org"><img src="http://camlistore.org/static/camli-header.jpg" width="300" alt="Camlistore"/></a> on Scaleway</h1>
 
 ## Install
 
