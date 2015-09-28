@@ -33,6 +33,11 @@ ENV GOROOT_BOOTSTRAP /usr/local/go1.4.2
 WORKDIR /usr/local/go/src
 RUN ./make.bash
 
+# Install mysql and deps
+RUN apt-get -y --no-install-recommends install mysql-server-core-5.6 mysql-server-5.6
+ADD ./patches/lib/systemd/system/camli-mysql.service /lib/systemd/system/camli-mysql.service
+ADD ./patches/usr/local/bin/run-mysqld /usr/local/bin/run-mysqld
+
 # Build and install Camlistore
 RUN apt-get -y --no-install-recommends install git
 WORKDIR /tmp/src
@@ -44,16 +49,17 @@ RUN go run make.go
 RUN cp -a ./bin/* /usr/local/bin/
 ADD ./patches/lib/systemd/system/camlistored.service /lib/systemd/system/camlistored.service
 ADD ./patches/etc/update-motd.d/70-camlistore /etc/update-motd.d/70-camlistore
+
+# Add camli user, set up fuse for cammount
 RUN adduser --disabled-password --gecos "" camli
+RUN apt-get -y --no-install-recommends install fuse
+RUN usermod -G fuse camli
+# Note: it seems like adding fuse to /etc/modules is useless. It does not have any influence
+# on whether the fuse module is inserted on boot. So instead I'm fixing that in camlistore-configure.
 
 ADD ./patches/usr/local/src/camlistore-configure.go /usr/local/src/camlistore-configure.go
 ENV GOPATH /tmp/
 RUN go build -o /usr/local/bin/camlistore-configure /usr/local/src/camlistore-configure.go
-
-# Install mysql and deps
-RUN apt-get -y --no-install-recommends install mysql-server-core-5.6 mysql-server-5.6
-ADD ./patches/lib/systemd/system/camli-mysql.service /lib/systemd/system/camli-mysql.service
-ADD ./patches/usr/local/bin/run-mysqld /usr/local/bin/run-mysqld
 
 # Clean rootfs from image-builder
 RUN /usr/local/sbin/builder-leave

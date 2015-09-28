@@ -138,6 +138,22 @@ func setupServices() {
 	}
 }
 
+// Because I don't understand how loading modules works nowadays, I'm doing it here.
+// Adding "fuse" to /etc/modules or to /etc/modules-load.d/fuse.conf seems to have no effect.
+// On the other hand, modprobing it once does the trick forever.
+// Furthermore, for some reason /etc/fuse.conf belongs to "systemd-journal" by default.
+func setupFUSE() {
+	out, err := exec.Command("modprobe", "fuse").CombinedOutput()
+	if err != nil {
+		log.Fatalf("error with modprobe fuse: %v, %v", string(out), err)
+	}
+	// Not using os.Chown because it's annoying to get the uid and gid
+	out, err = exec.Command("chown", "root:fuse", "/etc/fuse.conf").CombinedOutput()
+	if err != nil {
+		log.Fatalf("error with chown: %v, %v", string(out), err)
+	}
+}
+
 func checkArgs() {
 	if *flagUsername == "" {
 		fmt.Println("Please provide a username")
@@ -170,4 +186,5 @@ func main() {
 	}
 
 	setupServices()
+	setupFUSE()
 }
