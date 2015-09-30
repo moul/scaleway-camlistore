@@ -43,7 +43,7 @@ RUN apt-get -y --no-install-recommends install git
 WORKDIR /tmp/src
 RUN git clone https://camlistore.googlesource.com/camlistore camlistore.org
 WORKDIR /tmp/src/camlistore.org
-RUN git reset --hard def28fc337ff85105b8b7dc6f0cda64af62b1615
+RUN git reset --hard 6dfe405666b7aac69df559b5414b265928a11dbd
 ENV PATH $PATH:/usr/local/go/bin
 RUN go run make.go
 RUN cp -a ./bin/* /usr/local/bin/

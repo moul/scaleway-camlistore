@@ -26,8 +26,10 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"time"
 
 	"camlistore.org/pkg/jsonsign"
+	"camlistore.org/pkg/netutil"
 	"camlistore.org/pkg/types/serverconfig"
 	"camlistore.org/pkg/wkfs"
 )
@@ -35,6 +37,8 @@ import (
 var (
 	flagUsername = flag.String("username", "", "username for accessing the Camlistore web UI")
 	flagPassword = flag.String("password", "", "password for accessing the Camlistore web UI")
+	flagTimeout  = flag.Int("timeout", 60, "duration, in seconds, before giving up on trying to reach Camlistore")
+	flagDebug    = flag.Bool("debug", false, "various tweaks for when working on that program")
 )
 
 const (
@@ -115,6 +119,17 @@ func writeDefaultConfigFile() error {
 	return nil
 }
 
+func writeClientConfigFile() error {
+	out, err := exec.Command("su", "-c",
+		"/usr/local/bin/camput --server=https://localhost:3179 init --userpass="+*flagUsername+":"+*flagPassword+" --insecure=true",
+		camliUsername).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("camput init error: %v, %v", string(out), err)
+	}
+	fmt.Printf("Wrote client configuration at %v\n", path.Join(path.Dir(camliServerConf), "client-config.json"))
+	return nil
+}
+
 func service(op, serviceName string) {
 	out, err := exec.Command("systemctl", op, serviceName).CombinedOutput()
 	if err != nil {
@@ -173,18 +188,26 @@ func main() {
 	checkArgs()
 
 	if _, err := wkfs.Stat(camliServerConf); err == nil {
-		fmt.Printf("Configuration file %v already exists, nothing to do.\n", camliServerConf)
-		return
+		fmt.Printf("Configuration file %v already exists, not overwriting.\n", camliServerConf)
 	} else {
 		if !os.IsNotExist(err) {
 			log.Fatal(err)
 		}
+		if err := writeDefaultConfigFile(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	if err := writeDefaultConfigFile(); err != nil {
+	if !*flagDebug {
+		// Because we can't run these in a docker shell
+		setupServices()
+		setupFUSE()
+	}
+
+	if err := netutil.AwaitReachable("localhost:3179", time.Duration(*flagTimeout)*time.Second); err != nil {
+		log.Fatalf("Could not ask server for client config: %v", err)
+	}
+	if err := writeClientConfigFile(); err != nil {
 		log.Fatal(err)
 	}
-
-	setupServices()
-	setupFUSE()
 }

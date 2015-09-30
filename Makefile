@@ -1,6 +1,6 @@
 NAME =			camlistore
 VERSION =		latest
-VERSION_ALIASES =	def28fc337ff85105b8b7dc6f0cda64af62b1615
+VERSION_ALIASES =	6dfe405666b7aac69df559b5414b265928a11dbd
 TITLE =			Camlistore
 DESCRIPTION =		Camlistore with MySQL, pre-0.9
 SOURCE_URL =		https://github.com/scaleway-community/scaleway-camlistore
