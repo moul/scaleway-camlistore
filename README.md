@@ -2,6 +2,8 @@
 
 ## Install
 
+[![GuardRails badge](https://badges.production.guardrails.io/moul/scaleway-camlistore.svg)](https://www.guardrails.io)
+
 **This image is meant to be used on a scaleway C1 server.**
 
 Install from the [scaleway imagehub](https://www.scaleway.com/imagehub/)
